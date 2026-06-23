@@ -1,76 +1,93 @@
+from  dataclasses import dataclass
+@dataclass
 class Song:
-    def __init__(self, track_id, artists, album_name, track_name, popularity, duration_ms, explicit, danceability,
-                 energy, key,loudness, mode, speechiness, acousticness, instrumentalness, liveness, valence, tempo,
-                 time_signature, track_genre):
-        self.id = track_id
-        self.artist = artists
-        self.album = album_name
-        self.name = track_name
-        self.popularity = int(popularity)
-        if popularity>100 or popularity<0:
-            print("Error: wrong popularity")
-            #raise ValueError("incorrect popularity")
-        self.duration = int(duration_ms)
-        #explicit : has curse or not
-        self.explicit = explicit
-        if 0<float(danceability)<1:
-            self.danceabillity = float(danceability)
-        else:
-            print("Error: wrong danceabillity")
-            #raise ValueError("")
-        if 0<float(energy)<1:
-            self.energy = float(energy)
-        else:
-            print("Error: wrong energy")
-        if 0<float(instrumentalness)<1:
-            self.instrumentalness = float(instrumentalness)
-        else:
-            print("Error: wrong instrumentalness")
-            print("wrong", self.name)
-        if 0<float(acousticness)<1:
-            self.acousticness = float(acousticness)
-        else:
-            print("Error: wrong acousticness")
-        if 0<float(speechiness)<1:
-            self.speechiness = float(speechiness)
-        else:
-            print("Error: wrong speechiness")
-        #key: musical key 
-        if 0<=int(key)<=11:
-            self.key = int(key)
-        else:
-            print("Error: key was wrong")
-        #mode: minor or major
-        mode = int(mode)
-        if mode==1 or mode==0:
-            self.mode = mode
-        else:
-            print("Error: wrong mode entered")
-        liveness = float(liveness)
-        if 0<liveness<1:
-            self.liveness = liveness
-        else:
-            print("Error: wrong liveness")
-        valence = float(valence)
-        if 0<valence<1:
-            self.valence = valence
-        else:
-            print("Error: wrong valence")    
-        self.genre = track_genre
-        #loudness: 0 is most loud
-        self.loudness = float(loudness)
-        #tempo : BPM
-        self.tempo = float(tempo)
-        #time_signiture: usually 3,4,5 might be 0,1
-        self.time_signiture = int(time_signature)
+    track_id: str
+    artists: str
+    album_name: str
+    track_name: str
+    popularity: int
+    duration_ms: int
+    explicit: bool
+    danceability: float
+    energy: float
+    key: int
+    loudness: float
+    mode: int
+    speechiness: float
+    acousticness: float
+    instrumentalness: float
+    liveness: float
+    valence: float
+    tempo: float
+    time_signature: int
+    track_genre: str
+    SONG_FIELDS = [
+            {"key": "track_id",   "label": "Track ID",        "type": str},
+            {"key": "artists",    "label": "Artists",         "type": str},
+            {"key": "album_name", "label": "Album Name",      "type": str},
+            {"key": "track_name", "label": "Track Name",      "type": str},
+            {"key": "duration_ms","label": "Duration (ms)",   "type": int},
+            {"key": "explicit",   "label": "Explicit", "type": bool},
+            {"key": "danceability","label": "Danceability",   "type": float, "min": 0.0, "max": 1.0},
+            {"key": "energy",     "label": "Energy",          "type": float, "min": 0.0, "max": 1.0},
+            {"key": "key",        "label": "Key",      "type": int, "min": 0, "max": 11},
+            {"key": "loudness",   "label": "Loudness",        "type": float},
+            {"key": "mode",       "label": "Mode",      "type": int, "min": 0, "max": 1},
+            {"key": "speechiness","label": "Speechiness",     "type": float, "min": 0.0, "max": 1.0},
+            {"key": "acousticness","label": "Acousticness",   "type": float, "min": 0.0, "max": 1.0},
+            {"key": "instrumentalness","label": "Instrumentalness", "type": float, "min": 0.0, "max": 1.0},
+            {"key": "liveness",   "label": "Liveness",        "type": float, "min": 0.0, "max": 1.0},
+            {"key": "valence",    "label": "Valence",         "type": float, "min": 0.0, "max": 1.0},
+            {"key": "tempo",      "label": "Tempo",     "type": float},
+            {"key": "time_signature","label": "Time Signature", "type": int},
+            {"key": "track_genre","label": "Track Genre",     "type": str},
+            {"key": "popularity", "label": "Popularity",      "type": int, "min": 0, "max": 100}
+        ]
+    def __post_init__(self):
+        for field in Song.SONG_FIELDS:
+            info = getattr(self, field["key"])
+            if "min" in field and not (field["min"] <= info <= field["max"]):
+                raise ValueError(f"{field["label"]} Must be between {field['min']} and {field['max']}")                    
     def to_dict(self):
         row = {
-            "track_id": self.id, "artists": self.artist, "album_name":self.album, "track_name": self.name, 
-            "popularity": self.popularity, "duration_ms": self.duration, "explicit":self.explicit, 
+            "track_id": self.track_id, "artists": self.artists, "album_name":self.album_name, "track_name": self.track_name, 
+            "popularity": self.popularity, "duration_ms": self.duration_ms, "explicit":self.explicit, 
             "danceability":self.danceabillity,"energy":self.energy, "key":self.key,"loudness": self.loudness, 
-            "mode": self.mode, "speechiness": self.speechiness, "acousticness":self.speechiness, 
+            "mode": self.mode, "speechiness": self.speechiness, "acousticness":self.acousticness, 
             "instrumentalness":self.instrumentalness, "liveness":self.liveness, "valence":self.valence, 
             "tempo":self.tempo,"time_signature":self.time_signiture, "track_genre":self.genre
         }
         return row
-        
+    @classmethod
+    def new_song(cls):
+        data = cls.collect_data()
+        return Song(**data)
+    @staticmethod
+    def collect_data():
+        data = {}
+        print("\n---Enter Song Details---")
+        for field in Song.SONG_FIELDS:
+            while True:
+                if field["key"]=="popularity":
+                    choice = input("If you want to use ML enter yes, else enter the popularity yourself")
+                    if choice == "yes":
+                        pass #use ML to predict popularity
+                    else: 
+                        info = choice
+                else:
+                    info = input(f"{field['label']}: ")
+                try:
+                    if field["type"] == bool:
+                        value = info.lower()== "true"
+                    else:
+                        value = field["type"](info)
+                    
+                    if "min" in field and not (field["min"] <= value <= field["max"]):
+                        raise ValueError(f"{field["label"]} Must be between {field['min']} and {field['max']}")
+                    
+                    data[field["key"]] = value
+                    break
+                    
+                except (ValueError, TypeError) as e:
+                    print(f"Error: {e}. Please try again.")
+        return data            
