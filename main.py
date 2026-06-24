@@ -1,7 +1,6 @@
 from src import data_loader,data_cleaner,data_analyzer,ml,data_visualizer,song
 import os, pandas,time
 def main():
-    global df
     df = pandas.DataFrame()
     while True:
         os.system("cls")
@@ -13,75 +12,100 @@ def main():
             choice = int(input("Enter your choice (1-7): "))
         match (choice):
             case 1:
-                load_data_menu()
+                df = load_data_menu()
             case 2:
-                clean_menu()
-            case 3:
-                handle_outlier_menu()
-            case 4:
-                os.system("cls")
-                if df:
-                    data_loader.classify_data(df)
+                if not df.empty:
+                    clean_menu(df)
                 else:
                     print("You need to load data first")
+                    time.sleep(1)
+            case 3:
+                if not df.empty:
+                    handle_outlier_menu(df)
+                else:
+                    print("You need to load data first")
+                    time.sleep(1)
+            case 4:
+                os.system("cls")
+                if not df.empty:
+                    df = data_loader.classify_data(df)
+                    time.sleep(2)
+                else:
+                    print("You need to load data first")
+                    time.sleep(1)
             case 5:
                 os.system("cls")
                 song.Song.new_song()
             case 6:
-                insight_menu()
+                if not df.empty:
+                    insight_menu(df)
+                else:
+                    print("You need to load data first")
+                    time.sleep(1)
             case 7:
                 return
 
                 
-def clean_menu():
-    os.system("cls")
-    print("===============   Clean Menu ==============")
-    print("1. KNN imputer\n2. Mean imputer\n3. Median imputer\n4. exit")
-    imputer_num = int(input("Enter cleaning method"))
-    imputer = data_cleaner.BaseImputer()
-    if(imputer_num>4 or imputer_num<1):
-        print("try agian")
-        time.sleep(1)
-        clean_menu()
-    match (imputer_num):
-        case 1:
-           imputer =data_cleaner.KNNImputer()
-        case 2:
-            imputer =data_cleaner.MeanImputer()
-        case 3:
-            imputer =data_cleaner.MedianImputer()
-        case 4:
-            return
+def clean_menu(df):
+    while True:
+        os.system("cls")
+        print("===============   Clean Menu ==============")
+        print("1. KNN imputer\n2. Mean imputer\n3. Median imputer\n4. exit")
+        imputer_num = int(input("Enter cleaning method: "))
+        imputer = data_cleaner.BaseImputer()
+        if(imputer_num>4 or imputer_num<1):
+            print("try again")
+            time.sleep(1)
+            continue
+            
+        match (imputer_num):
+            case 1:
+                imputer =data_cleaner.KNNImputer()
+                break
+            case 2:
+                imputer =data_cleaner.MeanImputer()
+                break
+            case 3:
+                imputer =data_cleaner.MedianImputer()
+                break
+            case 4:
+                return
     df = imputer.impute(df)
+    return df
     
-def handle_outlier_menu():
-    os.system("cls")
-    print("===============   Outlier Menu ==============")
-    print("1. IQR method\n2. Z-score method\n4. exit")
-    handler_num = int(input("Enter the outlier method"))
-    handler = data_cleaner.BaseOutlierHandler()
-    if(handler_num>4 or handler_num<1):
-        print("try agian")
-        time.sleep(1)
-        handle_outlier_menu()
-    match (handler_num):
-        case 1:
-           handler =data_cleaner.IQROutlierHandler()
-        case 2:
-            handler =data_cleaner.ZScoreOutlierHandler()
-        case 3:
-            return
+def handle_outlier_menu(df):
+    while True:
+        os.system("cls")
+        print("===============   Outlier Menu ==============")
+        print("1. IQR method\n2. Z-score method\n3. exit")
+        handler_num = int(input("Enter the outlier method: "))
+        handler = data_cleaner.BaseOutlierHandler()
+        if(handler_num>3 or handler_num<1):
+            print("try again")
+            time.sleep(1)
+            continue
+        match (handler_num):
+            case 1:
+                handler =data_cleaner.IQROutlierHandler()
+                break
+            case 2:
+                handler =data_cleaner.ZScoreOutlierHandler()
+                break
+            case 3:
+                return
     df =handler.handle(df)
+    return df
 
-def insight_menu():
+def insight_menu(df):
     while True:
         os.system("cls")
         print("===============   Charts Menu ==============")
-        print("1. Correlation matrix\n2. Box plot\n3. top genres popularity\n4. sccater plot\n5. top artists popularity\n6. exit")
-        chart_num = int(input("Enter cleaning method"))
+        print("1. Correlation matrix\n2. Box plot\n3. top genres popularity\n4. scatter plot\n5. top artists popularity\n6. exit")
+        chart_num = int(input("Enter chart you want: "))
         if(chart_num>6 or chart_num<1):
-            print("try agian")
+            print("try again")
             time.sleep(1)
+            continue
         match (chart_num):
             case 1:
                 data_visualizer.plot_correlation_heatmap(df)
@@ -98,19 +122,22 @@ def insight_menu():
     
                         
 def load_data_menu():
-    os.system("cls")
-    print("===============   Data loading ==============")
-    path = input("Enter your dataset path or enter default or exit for going back")
-    if path=="exit":
-        return
-    elif path=="default":
-        df = data_loader.load_file()
-    else:
-        try:
-            df = data_loader.load_file(path)
-        except FileNotFoundError:
-            print("path doesnt exist")
-            time.sleep(1)
-            load_data_menu()
+    while True:
+        os.system("cls")
+        print("===============   Data loading ==============")
+        path = input("Enter your dataset path or enter default or exit for going back: ")
+        if path=="exit":
+            return pandas.DataFrame()
+        elif path=="default":
+            df = data_loader.load_file()
+            return df
+        else:
+            try:
+                df = data_loader.load_file(path)
+                return df
+            except FileNotFoundError:
+                print("path doesn't exist")
+                time.sleep(1)
+    
 if __name__ == "__main__":
     main()
