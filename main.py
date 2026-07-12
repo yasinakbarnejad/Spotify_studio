@@ -1,6 +1,8 @@
 from src import data_loader,data_cleaner,data_analyzer,ml,data_visualizer,song
 import os, pandas,time
+models_data = None
 def main():
+    global models_data
     df = pandas.DataFrame()
     while True:
         os.system("cls")
@@ -13,6 +15,10 @@ def main():
         match (choice):
             case 1:
                 df = load_data_menu()
+                if not df.empty:
+                    print("Training models on loaded data...")
+                    models_data = ml.train_models(df)
+                    time.sleep(1)
             case 2:
                 if not df.empty:
                     clean_menu(df)
@@ -35,7 +41,20 @@ def main():
                     time.sleep(1)
             case 5:
                 os.system("cls")
-                song.Song.new_song()
+                if models_data is not None:
+                    predictor = lambda atributes: ml.predict_popularity(atributes, models_data)
+                    new_song = song.Song.new_song(predictor=predictor)
+                else:
+                    print("No models trained. Popularity will be entered manually.")
+                    new_song = song.Song.new_song(predictor=None)
+                if not df.empty:
+                    choice = input("Append this song to the dataset? ").lower()
+                    if choice == "yes":
+                        data_loader.append_song(new_song, df)
+                        print("Song appended to dataset!")
+                        print("Retraining models with updated dataset...")
+                        models_data = ml.train_models(df)
+                time.sleep(1)
             case 6:
                 if not df.empty:
                     insight_menu(df)

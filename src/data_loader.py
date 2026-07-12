@@ -28,15 +28,15 @@ def classify_data(df):
             songs.append(song)
         except ValueError:
             bad_song.append(idx)
-    print(bad_song)
-    df.drop(index = bad_song,inplace=True)
+    print(f"Removed {len(bad_song)} invalid songs")
+    df.drop(index=bad_song, inplace=True)
     return df
 def append_song(song:Song, df):
     song_dict = song.to_dict()    
     with open("data/dataset.csv", 'r') as f:
         reader = csv.reader(f)
         header = next(reader)
-    with open("data/dataset.csv", 'a') as f:
-        writer = csv.DictWriter(f,fieldnames=header)
+    with open("data/dataset.csv", 'a', newline='') as f:
+        writer = csv.DictWriter(f, fieldnames=header)
         writer.writerow(song_dict)
     df.loc[len(df)] = song_dict
