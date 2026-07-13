@@ -21,13 +21,13 @@ def main():
                     time.sleep(1)
             case 2:
                 if not df.empty:
-                    clean_menu(df)
+                    df = clean_menu(df)
                 else:
                     print("You need to load data first")
                     time.sleep(1)
             case 3:
                 if not df.empty:
-                    handle_outlier_menu(df)
+                    df = handle_outlier_menu(df)
                 else:
                     print("You need to load data first")
                     time.sleep(1)
@@ -67,11 +67,14 @@ def main():
                 
 def clean_menu(df):
     while True:
+        imputer = data_cleaner.BaseImputer()
         os.system("cls")
         print("===============   Clean Menu ==============")
         print("1. KNN imputer\n2. Mean imputer\n3. Median imputer\n4. exit")
-        imputer_num = int(input("Enter cleaning method: "))
-        imputer = data_cleaner.BaseImputer()
+        try:
+            imputer_num = int(input("Enter cleaning method: "))
+        except ValueError:
+            print("please enter a number")
         if(imputer_num>4 or imputer_num<1):
             print("try again")
             time.sleep(1)
@@ -94,11 +97,14 @@ def clean_menu(df):
     
 def handle_outlier_menu(df):
     while True:
+        handler = data_cleaner.BaseOutlierHandler()
         os.system("cls")
         print("===============   Outlier Menu ==============")
         print("1. IQR method\n2. Z-score method\n3. exit")
-        handler_num = int(input("Enter the outlier method: "))
-        handler = data_cleaner.BaseOutlierHandler()
+        try:
+            handler_num = int(input("Enter the outlier method: "))
+        except ValueError:
+            print("please Enter a number")
         if(handler_num>3 or handler_num<1):
             print("try again")
             time.sleep(1)
@@ -120,7 +126,10 @@ def insight_menu(df):
         os.system("cls")
         print("===============   Charts Menu ==============")
         print("1. Correlation matrix\n2. Box plot\n3. top genres popularity\n4. scatter plot\n5. top artists popularity\n6. exit")
-        chart_num = int(input("Enter chart you want: "))
+        try:
+            chart_num = int(input("Enter chart you want: "))
+        except ValueError:
+            print("please enter a number")
         if(chart_num>6 or chart_num<1):
             print("try again")
             time.sleep(1)

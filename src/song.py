@@ -56,11 +56,11 @@ class Song:
     def to_dict(self):
         return asdict(self)
     @classmethod
-    def new_song(cls):
-        data = cls.collect_data()
+    def new_song(cls,predictor=None):
+        data = cls.collect_data(predictor)
         return Song(**data)
     @staticmethod
-    def collect_data():
+    def collect_data(predictor):
         data = {}
         print("\n---Enter Song Details---")
         for field in SONG_FIELDS:
@@ -68,7 +68,14 @@ class Song:
                 if field["key"]=="popularity":
                     choice = input("If you want to use ML enter yes, else enter the popularity yourself")
                     if choice == "yes":
-                        pass #use ML to predict popularity
+                        try:
+                            info = int(round(predictor(data)))
+                            print(f"\nPredicted popularity: {info}")
+                        except Exception as e:
+                            print(f"Prediction error: {e}")
+                            print("Please enter popularity")
+                            info = input(f"{field['label']}: ")
+
                     else: 
                         info = choice
                 else:

@@ -2,20 +2,8 @@ import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression
+from src.data_analyzer import get_artist_average, get_genre_average
 
-def get_genre_average(df):
-    genre_average = df.groupby('track_genre')['popularity'].agg(avg_popularity='mean').round(2).sort_values("avg_popularity", ascending=False).reset_index()
-    return genre_average
-
-def get_artist_average(df):
-    df['artist'] = df['artists'].str.split(';')
-    separated_df = df.explode('artist')
-    separated_df['artist'] = separated_df['artist'].str.strip()
-    artist_stat = separated_df.groupby("artist")["popularity"].agg(
-        avg_popularity="mean", 
-        hits=lambda x: (x > 50).sum(),
-        count="count").sort_values("avg_popularity", ascending=False).reset_index()
-    return artist_stat
 
 def prepare_features(df):
     genre_mean = get_genre_average(df)
@@ -43,13 +31,11 @@ def train_models(df):
     
     full_features = ["artist_mean", "energy*Instrumentalness", "acousticness^2", 
                      "valence^2", "genre_mean", "loudness"]
-    genre_artist_features = ["genre_mean", "artist_mean"]
     artist_features = ["artist_mean", "energy*Instrumentalness"]
     genre_features = ["genre_mean", "energy*Instrumentalness"]
     weak_features = ["energy*Instrumentalness", "acousticness^2", "valence^2", "loudness"]
     
     X_full = analysis_df[full_features]
-    X_genre_artist = analysis_df[genre_artist_features]
     X_artist = analysis_df[artist_features]
     X_genre = analysis_df[genre_features]
     X_weak = analysis_df[weak_features]
@@ -61,9 +47,6 @@ def train_models(df):
     
     X_train, _, y_train,_ = train_test_split(X_full, y, test_size=0.2, random_state=rand)
     models['full'] = LinearRegression().fit(X_train, y_train)
-    
-    X_train, _, y_train, _ = train_test_split(X_genre_artist, y, test_size=0.2, random_state=rand)
-    models['genre_artist'] = LinearRegression().fit(X_train, y_train)
     
     X_train, _, y_train, _ = train_test_split(X_artist, y, test_size=0.2, random_state=rand)
     models['artist'] = LinearRegression().fit(X_train, y_train)
@@ -81,43 +64,49 @@ def train_models(df):
         'median_artist': median_artist
     }
 
-def predict_popularity(song_attrs, models_data):
+def predict_popularity(attributes, models_data):
     models = models_data['models']
     genre_mean_dict = models_data['genre_mean_dict']
     artist_mean_dict = models_data['artist_mean_dict']
     median_artist = models_data['median_artist']
     
-    genre = song_attrs.get('track_genre','')
+    genre = attributes.get('track_genre','')
     genre_mean = genre_mean_dict.get(genre,np.nan)
     
-    artists_str = song_attrs.get('artists', '')
+    artists_str = attributes.get('artists', '')
     if pd.isna(artists_str) or artists_str == '':
         artist_mean = median_artist
         artist_known = False
     else:
         artist_list = [a.strip() for a in artists_str.split(';')]
         artist_means = [artist_mean_dict.get(a, np.nan) for a in artist_list]
-        if any(pd.isna(m) for m in artist_means):
+        artist_sum=0
+        count =0
+        for pop in artist_means:
+            if not (pd.isna(artists_str) or artists_str == ''):
+                artist_sum+=pop
+                count+=1
+        if count:
+            artist_known = True
+            artist_mean= artist_sum/count
+        else:
             artist_mean = median_artist
             artist_known = False
-        else:
-            artist_mean = np.mean(artist_means)
-            artist_known = True
     
 
     genre_known = not pd.isna(genre_mean)
     
 
-    energy_instrumentalness = song_attrs.get('instrumentalness', 0) *song_attrs.get('energy', 0)
-    acousticness_sq = song_attrs.get('acousticness', 0)**2
-    valence_sq = song_attrs.get('valence', 0)**2
-    loudness = song_attrs.get('loudness', 0)
+    energy_instrumentalness = attributes.get('instrumentalness', 0) *attributes.get('energy', 0)
+    acousticness_pow2 = attributes.get('acousticness', 0)**2
+    valence_pow2 = attributes.get('valence', 0)**2
+    loudness = attributes.get('loudness', 0)
     
 
     if genre_known and artist_known:
         model = models['full']
-        features = np.array([[artist_mean, energy_instrumentalness, acousticness_sq, 
-                             valence_sq, genre_mean, loudness]])
+        features = np.array([[artist_mean, energy_instrumentalness, acousticness_pow2, 
+                             valence_pow2, genre_mean, loudness]])
     elif artist_known:
         model = models['artist']
         features = np.array([[artist_mean, energy_instrumentalness]])
@@ -126,7 +115,7 @@ def predict_popularity(song_attrs, models_data):
         features = np.array([[genre_mean, energy_instrumentalness]])
     else:
         model = models['weak']
-        features = np.array([[energy_instrumentalness, acousticness_sq, valence_sq, loudness]])
+        features = np.array([[energy_instrumentalness, acousticness_pow2, valence_pow2, loudness]])
     
     prediction = model.predict(features)[0]
     prediction = max(0, min(100, prediction))
